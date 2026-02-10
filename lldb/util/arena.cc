@@ -52,4 +52,4 @@ auto Arena::AllocateNewBlock(size_t block_bytes) -> char * {
                           std::memory_order_relaxed);//写是原子的，不会撕裂
   return result;
 }
-}  // namespace Tskydb
+}  
