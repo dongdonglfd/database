@@ -3,9 +3,9 @@
 #include <condition_variable>
 #include <mutex>
 
-#include "util/macros.h"
+#include "macros.h"
 
-namespace Tskydb {
+namespace lldb {
 
 class MutexLock {
  public:
