@@ -6,6 +6,8 @@
 
 namespace lldb {
 
+Comparator::~Comparator() = default;
+
 namespace {
 
 class BytewiseComparatorImpl : public Comparator {
@@ -54,6 +56,9 @@ class BytewiseComparatorImpl : public Comparator {
     }
     // *key is a run of 0xffs.  Leave it alone.
   }
+  const char* Name() const override {
+    return "lldb.BytewiseComparator";
+}
 };
 
 }

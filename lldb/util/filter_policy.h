@@ -22,6 +22,7 @@ class FilterPolicy {
 // 判断：
 //     key 是否可能存在
   virtual bool KeyMayMatch(const Slice &key, const Slice &filter) const = 0;
+  virtual const char* Name() const = 0;
 };
 
 // Return a new filter policy that uses a bloom filter with approximately
@@ -39,5 +40,6 @@ class FilterPolicy {
 // FilterPolicy (like NewBloomFilterPolicy) that does not ignore
 // trailing spaces in keys.
 const FilterPolicy *NewBloomFilterPolicy(int bits_per_key);
+
 
 }  // namespace Tskydb

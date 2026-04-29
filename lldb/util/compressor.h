@@ -2,15 +2,9 @@
 
 #include <string>
 
-namespace lldb {
+#include "table/options.h"
 
-enum CompressionType {
-  // NOTE: do not change the values of existing entries, as these are
-  // part of the persistent format on disk.
-  kNoCompression = 0x0,
-  kSnappyCompression = 0x1,
-  kZstdCompression = 0x2,
-};
+namespace lldb {
 
 class Compressor {
  public:

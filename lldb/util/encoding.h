@@ -77,9 +77,9 @@ inline void PutFixed64(std::string *dst, uint64_t value) {
 // 从输入数据中读取一个定长整数
 template <typename T>
 bool GetFixed(Slice *input, T *value) {
-  if (input.size() < sizeof(T)) return false;
-  *value = DecodeFixed<T>(input.data());
-  input->remove_prefixe(sizeof(T));
+  if (input->size() < sizeof(T)) return false;
+  *value = DecodeFixed<T>(input->data());
+  input->remove_prefix(sizeof(T));
   return true;
 }
 

@@ -29,6 +29,7 @@ class Comparator {
 
   //用于最后一个block，只需要new>old
   virtual void FindShortSuccessor(std::string *key) const = 0;
+  virtual const char* Name() const = 0;
 };
 
 // Return a builtin comparator that uses lexicographic byte-wise
