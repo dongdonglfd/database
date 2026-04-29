@@ -1,5 +1,3 @@
-#pragma once
-
 #include <string>
 
 #include "iterator.h"
@@ -66,9 +64,9 @@ void MemTable::Add(SequenceNumber s, ValueType type, const Slice &key,
   char *p = EncodeVarint32(buf, internal_key_size);
   std::memcpy(p, key.data(), key.size());
   p += key_size;
-  EncodeFixed64(p, (s << 8) | key_size);
+  EncodeFixed64(p, (s << 8) | type);
   p += 8;
-  EncodeVarint32(p, val_size);
+  p = EncodeVarint32(p, val_size);
   std::memcpy(p, value.data(), value.size());
   assert(p + val_size == buf + encoded_len);
   table_.Insert(buf);
@@ -88,7 +86,8 @@ bool MemTable::Get(const LookupKey &key, std::string *value, Status *s) {
             Slice(key_ptr, key_length - 8), key.user_key()) == 0) {
       const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
       switch (static_cast<ValueType>(tag & 0xff)) {
-        case kTypeValue: {
+        case kTypeValue:
+        case kTypeVtableIndex: {
           Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
           value->assign(v.data(), v.size());
           return true;

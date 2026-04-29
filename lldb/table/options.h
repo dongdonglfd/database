@@ -11,7 +11,8 @@
 
 namespace lldb {
 
-class Cache;
+class LRUCache;
+using Cache = LRUCache;
 class Comparator;
 class Env;
 class FilterPolicy;
@@ -108,6 +109,10 @@ struct LEVELDB_EXPORT Options {
   // 增加此参数的另一个原因可能是当您最初填充大型数据库时。
   // 默认值：2MB
   size_t max_file_size = 2 * 1024 * 1024;
+
+  // value 超过此大小则放入 vtable，否则放入 sstable
+  // 默认值：1KB
+  size_t min_vtable_size = 1024;
 
   // 使用指定的压缩算法压缩块。此参数可以动态更改。
   //

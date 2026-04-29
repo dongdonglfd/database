@@ -100,4 +100,4 @@ class LRUCache {
   std::mutex latch_;
   uint64_t last_id_;
 };
-}  
+}
