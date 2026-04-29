@@ -11,6 +11,17 @@
 #include <thread>
 
 namespace lldb {
+
+static Status NewPosixRandomAccessFile(const std::string &filename,
+                                       RandomAccessFile **result);
+
+Env::Env() : bg_work_cv_(&bg_work_mutex_), started_background_thread_(false) {}
+
+Env *Env::Default() {
+  static Env default_env;
+  return &default_env;
+}
+
 // 一个辅助函数，用于将 POSIX 系统调用返回的错误码（errno）
 Status PosixError(const std::string &context, int error_number) {
   if (error_number == ENOENT) {
@@ -76,25 +87,7 @@ Status Env::NewSequentialFile(const std::string &filename,
 
 Status Env::NewRandomAccessFile(const std::string &filename,
                                 RandomAccessFile **result) {
-  *result = nullptr;
-  int fd = ::open(filename.c_str(), O_RDONLY);
-  if (fd < 0) {
-    return PosixError(filename, errno);
-  }
-
-  size_t file_size;
-  Status status = GetFileSize(filename, &file_size);
-  if (status.ok()) {
-    void *mmap_base = ::mmap(nullptr, file_size, PROT_READ, MAP_SHARED, fd, 0);
-    if (mmap_base != MAP_FAILED) {
-      *result = new MmapReadableFile(
-          filename, reinterpret_cast<char *>(mmap_base), file_size);
-    } else {
-      status = PosixError(filename, errno);
-    }
-  }
-  ::close(fd);
-  return status;
+  return NewPosixRandomAccessFile(filename, result);
 }
 
 Status Env::RenameFile(const std::string &from, const std::string &to) {
@@ -128,7 +121,7 @@ void Env::Schedule(BackgroundWorkFunc bg_work_function, void *bg_work_arg) {
   // Start the background thread, if we haven't done so already.
   if (!started_background_thread_) {
     started_background_thread_ = true;
-    std::thread(&BackgroundThreadMain).detach();
+    std::thread(&Env::BackgroundThreadMain, this).detach();
   }
 
   // If the queue is empty, the background thread may be waiting for work.
@@ -163,7 +156,7 @@ uint64_t Env::NowMicros() {
 }
 
 WriteableFileWriter::WriteableFileWriter(std::unique_ptr<WritableFile> &&file)
-    : writable_file_(std::move(file)), filesize_(0) {}
+    : filesize_(0), writable_file_(std::move(file)) {}
 
 Status WriteableFileWriter::Append(const Slice &data) {
   Status status = writable_file_->Append(data);
@@ -366,6 +359,18 @@ class PosixRandomAccessFile final : public RandomAccessFile {
   const std::string filename_;
 };
 
+static Status NewPosixRandomAccessFile(const std::string &filename,
+                                       RandomAccessFile **result) {
+  *result = nullptr;
+  int fd = ::open(filename.c_str(), O_RDONLY | kOpenBaseFlags);
+  if (fd < 0) {
+    return PosixError(filename, errno);
+  }
+
+  *result = new PosixRandomAccessFile(filename, fd);
+  return Status::OK();
+}
+
 class MmapReadableFile : public RandomAccessFile {
  public:
   MmapReadableFile(std::string filename, char *mmap_base, size_t length)
@@ -380,7 +385,7 @@ class MmapReadableFile : public RandomAccessFile {
   }
 
   Status Read(uint64_t offset, size_t n, Slice *result,
-              char *scratch) const override {
+              char * /*scratch*/) const override {
     if (offset + n > length_) {
       *result = Slice();
       return PosixError(filename_, EINVAL);

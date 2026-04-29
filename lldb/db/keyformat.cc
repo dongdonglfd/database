@@ -8,9 +8,15 @@ static uint64_t PackSequenceAndType(uint64_t seq, ValueType t) {
   return (seq << 8) | t;
 }
 
+// 将一个已解析的内部键（ParsedInternalKey）的各个部分（user_key, sequence, type）
+// 重新组合并追加到一个字符串（result）的末尾，从而构造出一个完整的内部键。
 void AppendInternalKey(std::string *result, const ParsedInternalKey &key) {
   result->append(key.user_key.data(), key.user_key.size());
   PutFixed64(result, PackSequenceAndType(key.sequence, key.type));
+}
+
+const char *InternalKeyComparator::Name() const {
+  return "lldb.InternalKeyComparator";
 }
 
 int InternalKeyComparator::Compare(const Slice &akey, const Slice &bkey) const {
@@ -65,6 +71,11 @@ void InternalKeyComparator::FindShortSuccessor(std::string *key) const {
   }
 }
 
+const char *InternalFilterPolicy::Name() const {
+  return user_policy_ != nullptr ? user_policy_->Name()
+                                 : "lldb.InternalFilterPolicy";
+}
+
 void InternalFilterPolicy::CreateFilter(const Slice *keys, int n,
                                         std::string *dst) const {
   Slice *mkey = const_cast<Slice *>(keys);
@@ -74,7 +85,10 @@ void InternalFilterPolicy::CreateFilter(const Slice *keys, int n,
   user_policy_->CreateFilter(keys, n, dst);
 }
 
-bool InternalFilterPolicy::KeyMayMatch(const Slice &key, const Slice &f) const {
+// 这是一个适配器函数，用于将针对用户键（user_key）的过滤策略（user_policy_）
+// 应用于内部键（internal key）。
+// 它首先从内部键中提取出用户键，然后调用用户提供的策略来进行实际的匹配判断。
+bool InternalFilterPolicy::KeyMayMatch(const Slice& key, const Slice& f) const {
   return user_policy_->KeyMayMatch(ExtractUserKey(key), f);
 }
 
@@ -96,4 +110,4 @@ LookupKey::LookupKey(const Slice &user_key, SequenceNumber s) {
   dst += 8;
   end_ = dst;
 }
-}  
+}

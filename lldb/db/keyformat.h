@@ -135,6 +135,7 @@ class LookupKey {
   // Initialize *this for looking up user_key at a snapshot with
   // the specified sequence number.
   LookupKey(const Slice& user_key, SequenceNumber sequence);
+  ~LookupKey();
 
   LookupKey(const LookupKey&) = delete;// namespace leveldb
   // 返回InternalKey
@@ -142,6 +143,7 @@ class LookupKey {
 
   // 返回纯用户键
   Slice user_key() const { return Slice(kstart_, end_ - kstart_ - 8); }
+  Slice memtable_key() const { return Slice(start_, end_ - start_); }
 
  private:
   // We construct a char array of the form:
@@ -162,4 +164,3 @@ inline LookupKey::~LookupKey() {
 }
 
 }  
-

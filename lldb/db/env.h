@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <functional>
 #include <mutex>
 #include <queue>
@@ -13,6 +14,10 @@
 
 namespace lldb {
 
+class SequentialFile;
+class RandomAccessFile;
+class WritableFile;
+
 using size_t = std::size_t;
 
 constexpr const size_t kWritableFileBufferSize = 65536;//缓冲区的默认大小为 64 KB
@@ -22,8 +27,9 @@ class Env {
   using BackgroundWorkFunc = std::function<void(void *)>;
 
  public:
-  Env() = default;
+  Env();
   ~Env() = default;
+  static Env *Default();
   //创建 顺序读取文件
   Status NewSequentialFile(const std::string &filename,
                            SequentialFile **result);
